@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Visiter Counter — Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <button class="btn-main" onclick="window.location.href='index.html'">← Retour aux balises</button>
+    </div>
+    <div class="header-right">
+      <button class="btn-theme" id="theme-btn">
+        <img id="theme-icon" src="https://cdn-icons-png.flaticon.com/512/6714/6714978.png" alt="theme icon">
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+
+    <div class="info-row">
+      <div class="card info-card">
+        <div class="info-title">Balise</div>
+        <div class="info-value" id="tagName">—</div>
+      </div>
+      <div class="card info-card">
+        <div class="info-title">Paramètre "tag" dans l'URL</div>
+        <div class="info-value" id="tagParam">—</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="stat-title">Pages trackées</div>
+        <div class="stat-value" id="pages-count">42</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Visiteurs aujourd'hui</div>
+        <div class="stat-value" id="today-visitors">128</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Visiteurs totaux</div>
+        <div class="stat-value" id="total-visitors">9583</div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js" defer></script>
+</body>
+</html>
