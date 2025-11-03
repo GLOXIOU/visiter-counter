@@ -33,7 +33,7 @@ node server.js
 # Then open your browser and go to: (you can change the port in the .env file)
 http://localhost:3000
 
-
+```
 ---
 
 ## 🧩 Usage
