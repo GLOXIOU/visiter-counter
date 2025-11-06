@@ -78,7 +78,7 @@
       li.addEventListener('click', ()=>{
         const url = new URL(window.location.href);
         const base = url.origin + (url.pathname.replace(/\/[^/]*$/,'/') || '/');
-        const dest = new URL('dashboard.html', base);
+        const dest = new URL('../dashboard/dashboard.html', base);
         dest.searchParams.set('tag', tag);
         dest.searchParams.set('name', tag);
         window.location.href = dest.toString();
@@ -114,7 +114,7 @@
           else {
             const url = new URL(window.location.href);
             const base = url.origin + (url.pathname.replace(/\/[^/]*$/,'/') || '/');
-            const dest = new URL('dashboard.html', base);
+            const dest = new URL('../dashboard/dashboard.html', base);
             dest.searchParams.set('tag', tag);
             dest.searchParams.set('name', tag);
             window.location.href = dest.toString();
