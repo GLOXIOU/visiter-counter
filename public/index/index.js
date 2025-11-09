@@ -1,282 +1,172 @@
-(function(){
-  const STORAGE_KEY = 'visiter:tags';
-  const THEME_KEY = 'visiter:theme';
-  function loadTags(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(!raw) return [];
-      const parsed = JSON.parse(raw);
-      if(Array.isArray(parsed)) return parsed;
-      return [];
-    }catch(e){
-      return [];
-    }
+const STORAGE_KEY = 'visitor_tags_v1';
+
+function qs(selector) {
+  return document.querySelector(selector);
+}
+
+function loadTags() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  try {
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
   }
-  function saveTags(list){
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-    }catch(e){}
+}
+
+function saveTags(list) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+}
+
+function genCode(length = 10) {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let out = '';
+  for (let i = 0; i < length; i++) {
+    out += chars[Math.floor(Math.random() * chars.length)];
   }
-  function generateTag(length=10){
-    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let res = '';
-    for(let i=0;i<length;i++){
-      res += charset.charAt(Math.floor(Math.random()*charset.length));
-    }
-    return res;
-  }
-  function createUniqueTag(attempts=6){
-    const tags = loadTags();
-    for(let i=0;i<attempts;i++){
-      const t = generateTag(10);
-      if(!tags.includes(t)){
-        tags.unshift(t);
-        saveTags(tags);
-        return t;
-      }
-    }
-    const fallback = generateTag(12) + Date.now().toString(36);
-    const tags2 = loadTags();
-    tags2.unshift(fallback);
-    saveTags(tags2);
-    return fallback;
-  }
-  const qs = sel => document.querySelector(sel);
-  const qsa = sel => Array.from(document.querySelectorAll(sel));
-  function escapeHtml(s){
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-  function getTagListEl(){
-    return document.getElementById('tagList') || document.getElementById('tagsList');
-  }
-  function renderTags(){
-    const tagListEl = getTagListEl();
-    const emptyStateEl = document.getElementById('emptyState') || document.getElementById('empty');
-    if(!tagListEl) return;
-    const tags = loadTags();
-    tagListEl.innerHTML = '';
-    if(tags.length === 0){
-      if(emptyStateEl) emptyStateEl.style.display = 'block';
-      return;
-    } else {
-      if(emptyStateEl) emptyStateEl.style.display = 'none';
-    }
-    tags.forEach(tag=>{
-      const li = document.createElement('li');
-      li.className = 'tag-item';
-      li.setAttribute('role','button');
-      li.setAttribute('tabindex','0');
-      li.dataset.tag = tag;
-      const spanName = document.createElement('div');
-      spanName.className = 'tag-name';
-      spanName.textContent = tag;
-      const spanMeta = document.createElement('div');
-      spanMeta.className = 'tag-meta';
-      spanMeta.textContent = 'Aller au dashboard →';
-      li.appendChild(spanName);
-      li.appendChild(spanMeta);
-      li.addEventListener('click', ()=>{
-        const url = new URL(window.location.href);
-        const base = url.origin + (url.pathname.replace(/\/[^/]*$/,'/') || '/');
-        const dest = new URL('../dashboard/dashboard.html', base);
-        dest.searchParams.set('tag', tag);
-        dest.searchParams.set('name', tag);
-        window.location.href = dest.toString();
-      });
-      li.addEventListener('keydown', (e)=>{
-        if(e.key === 'Enter' || e.key === ' '){
-          e.preventDefault();
-          li.click();
-        }
-      });
-      const protoContainer = document.createElement('div');
-      protoContainer.style.display = 'flex';
-      protoContainer.style.gap = '8px';
-      protoContainer.style.alignItems = 'center';
-      if(document.getElementById('tagsList')){
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'btn-copy';
-        copyBtn.type = 'button';
-        copyBtn.textContent = 'Copier ID';
-        copyBtn.addEventListener('click', (e)=>{
-          e.stopPropagation();
-          copyToClipboard(tag, copyBtn);
-        });
-        const viewBtn = document.createElement('button');
-        viewBtn.className = 'btn-ghost';
-        viewBtn.type = 'button';
-        viewBtn.textContent = 'Voir';
-        viewBtn.dataset.show = tag;
-        viewBtn.addEventListener('click', (ev)=>{
-          ev.stopPropagation();
-          const openBtn = document.getElementById('openModal');
-          if(openBtn) openModalForTag(tag);
-          else {
-            const url = new URL(window.location.href);
-            const base = url.origin + (url.pathname.replace(/\/[^/]*$/,'/') || '/');
-            const dest = new URL('../dashboard/dashboard.html', base);
-            dest.searchParams.set('tag', tag);
-            dest.searchParams.set('name', tag);
-            window.location.href = dest.toString();
-          }
-        });
-        protoContainer.appendChild(copyBtn);
-        protoContainer.appendChild(viewBtn);
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'flex';
-        wrapper.style.justifyContent = 'space-between';
-        wrapper.style.alignItems = 'center';
-        wrapper.style.gap = '12px';
-        const left = document.createElement('div');
-        left.appendChild(spanName);
-        left.appendChild(spanMeta);
-        wrapper.appendChild(left);
-        wrapper.appendChild(protoContainer);
-        li.innerHTML = '';
-        li.appendChild(wrapper);
-      }
-      tagListEl.appendChild(li);
-    });
-  }
-  function highlightTag(tag){
-    setTimeout(()=>{
-      const items = Array.from(document.querySelectorAll('.tag-item'));
-      const first = items.find(it=>it.dataset.tag === tag);
-      if(first){
-        first.scrollIntoView({behavior:'smooth', block:'center'});
-        first.style.boxShadow = '0 12px 30px rgba(29,185,84,0.16)';
-        setTimeout(()=> first.style.boxShadow = '', 1100);
-      }
-    },50);
-  }
-  const modalEl = document.getElementById('modal');
-  const openModalBtn = document.getElementById('openModal');
-  const closeModalBtn = document.getElementById('closeModal');
-  const backdropEl = document.getElementById('backdrop');
-  const cancelBtn = document.getElementById('cancel');
-  const createForm = document.getElementById('createForm');
-  const tagNameInput = document.getElementById('tagName');
-  const resultBox = document.getElementById('result');
-  const codeIdEl = document.getElementById('codeId');
-  const codeHeadEl = document.getElementById('codeHead');
-  const exampleTagEl = document.getElementById('exampleTag');
-  function openModal(){
-    if(!modalEl) return;
-    modalEl.setAttribute('aria-hidden','false');
-    if(tagNameInput) tagNameInput.focus();
-  }
-  function closeModal(){
-    if(!modalEl) return;
-    modalEl.setAttribute('aria-hidden','true');
-    if(createForm) createForm.reset();
-    if(resultBox) resultBox.hidden = true;
-  }
-  function openModalForTag(tag){
-    if(!modalEl) return openModal();
-    openModal();
-    if(tagNameInput) tagNameInput.value = 'balise-' + tag.slice(0,4);
-    const headSnippet = `<script async src="https://cdn.visiter.example/widget.js" data-visiter-tag="${escapeHtml(tag)}" data-visiter-name="${escapeHtml(tag)}"></script>`;
-    if(codeIdEl) codeIdEl.textContent = tag;
-    if(codeHeadEl) codeHeadEl.innerHTML = escapeHtml(headSnippet);
-    if(exampleTagEl) exampleTagEl.innerHTML = escapeHtml(`<div class="visiter-tag" data-tag="${escapeHtml(tag)}" data-name="${escapeHtml(tag)}"></div>`);
-    if(resultBox) resultBox.hidden = false;
-  }
-  if(openModalBtn) openModalBtn.addEventListener('click', openModal);
-  if(closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-  if(backdropEl) backdropEl.addEventListener('click', closeModal);
-  if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
-  if(createForm){
-    createForm.addEventListener('submit', function(ev){
-      ev.preventDefault();
-      const name = (tagNameInput && tagNameInput.value.trim()) || 'untitled';
-      const id = createUniqueTag();
-      renderTags();
-      highlightTag(id);
-      if(codeIdEl) codeIdEl.textContent = id;
-      const headSnippet = `<script async src="https://cdn.visiter.example/widget.js" data-visiter-tag="${escapeHtml(id)}" data-visiter-name="${escapeHtml(name)}"></script>`;
-      if(codeHeadEl) codeHeadEl.innerHTML = escapeHtml(headSnippet);
-      const example = `<div class="visiter-tag" data-tag="${escapeHtml(id)}" data-name="${escapeHtml(name)}"></div>`;
-      if(exampleTagEl) exampleTagEl.innerHTML = escapeHtml(example);
-      if(resultBox) resultBox.hidden = false;
-    });
-  }
-  function copyToClipboard(text, btn){
-    if(!text) return;
-    navigator.clipboard?.writeText(text).then(()=>{
-      if(btn){
-        const original = btn.textContent;
-        btn.textContent = 'Copié ✓';
-        setTimeout(()=> btn.textContent = original, 1400);
-      }
-    }).catch(()=>{
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); if(btn) btn.textContent = 'Copié ✓'; }
-      catch(e){ alert('Impossible de copier automatiquement — sélectionnez et copiez manuellement.'); }
-      document.body.removeChild(ta);
-      setTimeout(()=> { if(btn) btn.textContent = 'Copier'; }, 1400);
-    });
-  }
-  document.addEventListener('click', function(e){
-    const btn = e.target.closest('.btn-copy');
-    if(!btn) return;
-    const targetSel = btn.getAttribute('data-copytarget');
-    if(targetSel){
-      const target = document.querySelector(targetSel);
-      if(target){
-        copyToClipboard(target.textContent || target.innerText || '', btn);
-        return;
-      }
-    }
-    if(btn.dataset && btn.dataset.tag){
-      copyToClipboard(btn.dataset.tag, btn);
-      return;
-    }
-    if(btn.textContent){
-      copyToClipboard(btn.textContent, btn);
-    }
+  return out;
+}
+
+function snippetFor(code) {
+  return `<script async src="https://example.com/tag.js?tag=${code}"></script>`;
+}
+
+function createTagElement(item) {
+  const li = document.createElement('li');
+  li.className = 'tag-item';
+
+  const left = document.createElement('div');
+  left.className = 'tag-main';
+
+  const pill = document.createElement('div');
+  pill.className = 'tag-pill';
+  pill.textContent = item.name.charAt(0).toUpperCase();
+
+  const info = document.createElement('div');
+
+  const name = document.createElement('div');
+  name.className = 'tag-name';
+  name.textContent = item.name;
+
+  const code = document.createElement('div');
+  code.className = 'tag-code';
+  code.textContent = item.code;
+
+  info.appendChild(name);
+  info.appendChild(code);
+  left.appendChild(pill);
+  left.appendChild(info);
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'btn small';
+  copyBtn.textContent = 'Copier';
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(snippetFor(item.code));
+      copyBtn.textContent = 'Copié';
+      setTimeout(() => (copyBtn.textContent = 'Copier'), 1400);
+    } catch {}
   });
-  function applyTheme(theme){
-    if(theme === 'light'){
-      document.body.classList.add('light-theme');
-    }else{
-      document.body.classList.remove('light-theme');
-    }
-  }
-  function toggleTheme(){
-    const current = localStorage.getItem(THEME_KEY) || 'dark';
-    const next = current === 'dark' ? 'light' : 'dark';
-    localStorage.setItem(THEME_KEY, next);
-    applyTheme(next);
-  }
-  function initTheme(){
-    const btn = document.getElementById('theme-btn');
-    const saved = localStorage.getItem(THEME_KEY) || 'dark';
-    applyTheme(saved);
-    if(btn) btn.addEventListener('click', toggleTheme);
-  }
-  function initTagsPage(){
-    const newTagBtn = document.getElementById('newTagBtn');
-    renderTags();
-    if(newTagBtn){
-      newTagBtn.addEventListener('click', ()=>{
-        const newTag = createUniqueTag();
-        renderTags();
-        highlightTag(newTag);
-      });
-    }
-    if(openModalBtn) openModalBtn.addEventListener('click', openModal);
-  }
-  document.addEventListener('DOMContentLoaded', ()=>{
-    initTheme();
-    if(getTagListEl()) initTagsPage();
-    document.addEventListener('keydown', function(e){
-      if(e.key === 'Escape' && modalEl && modalEl.getAttribute('aria-hidden') === 'false') closeModal();
-    });
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn secondary small';
+  delBtn.textContent = 'Supprimer';
+  delBtn.addEventListener('click', () => {
+    const ok = confirm('Supprimer cette balise ?');
+    if (!ok) return;
+    const updated = loadTags().filter(t => t.code !== item.code);
+    saveTags(updated);
+    render();
   });
-  window.__visiter = {
-    loadTags, saveTags, createUniqueTag, renderTags, openModal, closeModal
-  };
-})();
+
+  const viewBtn = document.createElement('button');
+  viewBtn.className = 'btn ghost small';
+  viewBtn.textContent = 'Voir le dashboard';
+  viewBtn.addEventListener('click', () => {
+    location.href = `dashboard.html?tag=${encodeURIComponent(item.code)}`;
+  });
+
+  actions.appendChild(copyBtn);
+  actions.appendChild(delBtn);
+  actions.appendChild(viewBtn);
+
+  li.appendChild(left);
+  li.appendChild(actions);
+
+  return li;
+}
+
+function render() {
+  const list = loadTags();
+  const container = qs('#tagList');
+  const empty = qs('#empty');
+  container.innerHTML = '';
+
+  if (!list.length) {
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  list.forEach(item => {
+    const el = createTagElement(item);
+    container.appendChild(el);
+  });
+}
+
+function openModal() {
+  const modal = qs('#modal');
+  modal.setAttribute('aria-hidden', 'false');
+  qs('#tagName').value = '';
+  const code = genCode();
+  qs('#generatedCode').value = code;
+  qs('#headSnippet').value = snippetFor(code);
+  qs('#tagName').focus();
+}
+
+function closeModal() {
+  qs('#modal').setAttribute('aria-hidden', 'true');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  render();
+
+  qs('#createBtn').addEventListener('click', openModal);
+  qs('#closeModal').addEventListener('click', closeModal);
+  qs('#cancel').addEventListener('click', closeModal);
+
+  qs('#modal').addEventListener('click', (e) => {
+    if (e.target === qs('#modal')) closeModal();
+  });
+
+  qs('#createForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = qs('#tagName').value.trim();
+    if (!name) return;
+    const code = qs('#generatedCode').value || genCode();
+    const list = loadTags();
+    list.unshift({ name, code, created: Date.now() });
+    saveTags(list);
+    render();
+    closeModal();
+  });
+
+  qs('#generatedCode').addEventListener('click', async () => {
+    qs('#generatedCode').select();
+    try {
+      await navigator.clipboard.writeText(qs('#generatedCode').value);
+    } catch {}
+  });
+
+  qs('#headSnippet').addEventListener('click', async () => {
+    qs('#headSnippet').select();
+    try {
+      await navigator.clipboard.writeText(qs('#headSnippet').value);
+    } catch {}
+  });
+
+  window.addEventListener('storage', render);
+});
