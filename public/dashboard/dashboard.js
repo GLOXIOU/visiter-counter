@@ -135,6 +135,7 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         plugins: { legend: { display: true, labels: { boxWidth: 12 } } },
         scales: {
           x: { grid: { display: false }, ticks: { color: isLight ? '#222' : '#e6eef6' } },
@@ -244,6 +245,7 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         plugins: {
           legend: { display: true, labels: { boxWidth: 12 } }
         },
@@ -276,6 +278,213 @@
     }, 10000);
   }
 
+  function generateFakeTopPages(){
+    const pages = [
+      '/','/produits','/blog/post-1','/contact','/a-propos','/blog/post-2','/pricing'
+    ];
+    return pages.map((p,i)=> {
+      return { rank: i+1, url: p, views: Math.round(5000/(i+1) + Math.random()*200), uniques: Math.round(4000/(i+1) + Math.random()*120), avgTime: (Math.round((30 + Math.random()*180))*1) + 's' };
+    });
+  }
+
+  function renderTopPages(){
+    const tbody = document.querySelector('#topPagesTable tbody');
+    if(!tbody) return;
+    const data = generateFakeTopPages();
+    tbody.innerHTML = '';
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      const tdRank = document.createElement('td');
+      tdRank.textContent = String(row.rank);
+      const tdUrl = document.createElement('td');
+      tdUrl.textContent = row.url;
+      const tdViews = document.createElement('td');
+      tdViews.textContent = formatNumber(row.views);
+      const tdUniques = document.createElement('td');
+      tdUniques.textContent = formatNumber(row.uniques);
+      const tdTime = document.createElement('td');
+      tdTime.textContent = row.avgTime;
+      tr.appendChild(tdRank);
+      tr.appendChild(tdUrl);
+      tr.appendChild(tdViews);
+      tr.appendChild(tdUniques);
+      tr.appendChild(tdTime);
+      tbody.appendChild(tr);
+    });
+  }
+
+  let deviceChart = null;
+  let browserChart = null;
+
+  function generateBreakdown(){
+    const devices = { mobile: Math.round(60 + Math.random()*20), desktop: Math.round(30 + Math.random()*10), tablet: Math.round(5 + Math.random()*5) };
+    const browsers = { chrome: Math.round(60 + Math.random()*15), safari: Math.round(20 + Math.random()*8), firefox: Math.round(10 + Math.random()*5), other: Math.round(5 + Math.random()*3) };
+    return { devices, browsers };
+  }
+
+  function renderBreakdownCharts(){
+    const bd = generateBreakdown();
+    const dCtx = document.getElementById('deviceChart') && document.getElementById('deviceChart').getContext('2d');
+    const bCtx = document.getElementById('browserChart') && document.getElementById('browserChart').getContext('2d');
+    const legendEl = document.getElementById('breakdownLegend');
+    const deviceColors = ['#1db954','#60a5fa','#f59e0b'];
+    const browserColors = ['#60a5fa','#34d399','#a78bfa','#9ca3af'];
+    if(legendEl){
+      legendEl.innerHTML = '';
+      const chips = [
+        {label:'Mobile', color: deviceColors[0]},
+        {label:'Bureau', color: deviceColors[1]},
+        {label:'Tablette', color: deviceColors[2]},
+        {label:'Chrome', color: browserColors[0]},
+        {label:'Safari', color: browserColors[1]},
+        {label:'Firefox', color: browserColors[2]},
+        {label:'Autre', color: browserColors[3]}
+      ];
+      chips.forEach(c => {
+        const span = document.createElement('span');
+        span.className = 'legend-chip';
+        const box = document.createElement('span');
+        box.className = 'legend-box';
+        box.style.background = c.color;
+        box.style.borderColor = '#ffffff';
+        span.appendChild(box);
+        const txt = document.createElement('span');
+        txt.textContent = c.label;
+        span.appendChild(txt);
+        legendEl.appendChild(span);
+      });
+    }
+    if(dCtx){
+      if(deviceChart) deviceChart.destroy();
+      const isLight = document.body.classList.contains('light-theme');
+      const borderColor = isLight ? '#f8fafc' : '#0f1724';
+      deviceChart = new Chart(dCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Mobile','Bureau','Tablette'],
+          datasets: [{ data: [bd.devices.mobile, bd.devices.desktop, bd.devices.tablet], backgroundColor: deviceColors, borderColor: borderColor, borderWidth: 2 }]
+        },
+        options: { animation: false, maintainAspectRatio: false, responsive: true, cutout: '60%', plugins: { legend: { display: false } } }
+      });
+    }
+    if(bCtx){
+      if(browserChart) browserChart.destroy();
+      const isLight = document.body.classList.contains('light-theme');
+      const borderColor = isLight ? '#f8fafc' : '#0f1724';
+      browserChart = new Chart(bCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Chrome','Safari','Firefox','Autre'],
+          datasets: [{ data: [bd.browsers.chrome, bd.browsers.safari, bd.browsers.firefox, bd.browsers.other], backgroundColor: browserColors, borderColor: borderColor, borderWidth: 2 }]
+        },
+        options: { animation: false, maintainAspectRatio: false, responsive: true, cutout: '60%', plugins: { legend: { display: false } } }
+      });
+    }
+  }
+
+  let mapInstance = null;
+  let mapMarkers = [];
+  function initMap(){
+    const mapEl = document.getElementById('map');
+    if(!mapEl) return;
+    mapInstance = L.map('map', {center:[20,0], zoom:2, attributionControl:false});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(mapInstance);
+    const marker = L.circleMarker([20,0],{radius:8, color:'#1db954', fillColor:'#1db954', fillOpacity:0.24}).addTo(mapInstance);
+    mapMarkers.push(marker);
+    mapInstance.on('click', e=>{
+      marker.setLatLng(e.latlng);
+      mapInstance.panTo(e.latlng);
+    });
+  }
+
+  function addLiveMarker(lat, lng){
+    if(!mapInstance) return;
+    const m = L.circleMarker([lat,lng], {radius:6, color:'#34d399', fillColor:'#34d399', fillOpacity:0.22}).addTo(mapInstance);
+    mapMarkers.push(m);
+    setTimeout(()=> { mapInstance.removeLayer(m); const idx = mapMarkers.indexOf(m); if(idx !== -1) mapMarkers.splice(idx,1); }, 20000);
+  }
+
+  let liveInterval = null;
+  let livePaused = false;
+  let pageCounts = {};
+  let lastBreakdownUpdate = 0;
+  function initLiveFeed(){
+    const liveList = document.getElementById('liveList');
+    if(!liveList) return;
+    const pages = ['/','/produits','/blog/post-1','/contact','/a-propos','/blog/post-2','/pricing'];
+    pages.forEach(p => pageCounts[p] = Math.max(0, Math.round(100 + Math.random()*400)));
+    function renderLiveList(){
+      liveList.innerHTML = '';
+      const keys = Object.keys(pageCounts);
+      keys.forEach(url=>{
+        const li = document.createElement('li');
+        li.className = 'live-item';
+        li.innerHTML = '<span class="dot" aria-hidden="true"></span><div class="meta"><strong>'+url+'</strong> • <span class="time">'+formatNumber(pageCounts[url])+' vues</span></div>';
+        liveList.appendChild(li);
+      });
+    }
+    renderLiveList();
+    function pushEntry(){
+      if(livePaused) return;
+      const keys = Object.keys(pageCounts);
+      const pick = keys[Math.floor(Math.random()*keys.length)];
+      pageCounts[pick] = pageCounts[pick] + 1;
+      renderLiveList();
+      addLiveMarker((Math.random()*140)-70, (Math.random()*360)-180);
+      const todayVisitorsEl = document.getElementById('today-visitors');
+      const totalEl = document.getElementById('total-visitors');
+      if(todayVisitorsEl) todayVisitorsEl.textContent = formatNumber(Number(String(todayVisitorsEl.textContent).replace(/\s/g,'')) + 1);
+      if(totalEl) totalEl.textContent = formatNumber(Number(String(totalEl.textContent).replace(/\s/g,'')) + 1);
+      renderTopPages();
+      const nowTs = Date.now();
+      if(nowTs - lastBreakdownUpdate > 30000){
+        renderBreakdownCharts();
+        lastBreakdownUpdate = nowTs;
+      }
+    }
+    liveInterval = setInterval(pushEntry, 3500);
+  }
+
+  function exportCSV(){
+    const topRows = generateFakeTopPages();
+    const csvLines = [];
+    csvLines.push(['Rank','Page','Views','Uniques','AvgTime'].join(','));
+    topRows.forEach(r => csvLines.push([r.rank, '"'+r.url+'"', r.views, r.uniques, r.avgTime].join(',')));
+    const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'top-pages.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function renderServicesStatus(){
+    const services = [
+      { id: 'api', name: 'Serveur API', ok: true },
+      { id: 'db', name: 'Base de données', ok: true },
+      { id: 'notifications', name: 'Notifications', ok: false }
+    ];
+    const el = document.getElementById('servicesList');
+    if(!el) return;
+    el.innerHTML = '';
+    services.forEach(s=>{
+      const row = document.createElement('div');
+      row.className = 'service-row';
+      const name = document.createElement('div');
+      name.className = 'service-name';
+      name.textContent = s.name;
+      const status = document.createElement('div');
+      status.className = 'service-status-label ' + (s.ok ? 'service-up' : 'service-down');
+      status.textContent = s.ok ? 'Opérationnel' : 'Hors ligne';
+      row.appendChild(name);
+      row.appendChild(status);
+      el.appendChild(row);
+    });
+  }
+
   function initDashboardPage(){
     const params = new URLSearchParams(window.location.search);
     const tag = params.get('tag') || '';
@@ -287,21 +496,21 @@
     initPeriodSelector();
     initChartModalInteractions();
     initLatencyChart();
+    initMap();
+    renderTopPages();
+    renderBreakdownCharts();
+    initLiveFeed();
+    renderServicesStatus();
     const mapEl = document.getElementById('map');
     if(!mapEl) return;
-    const map = L.map('map', {center:[20,0], zoom:2, attributionControl:false});
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
-    const marker = L.circleMarker([20,0],{radius:8, color:'#1db954', fillColor:'#1db954', fillOpacity:0.24}).addTo(map);
-    map.on('click', e=>{
-      marker.setLatLng(e.latlng);
-      map.panTo(e.latlng);
-    });
+    const map = mapInstance;
   }
 
   document.addEventListener('DOMContentLoaded', ()=>{
     initTheme();
+    document.getElementById('exportCsv') && document.getElementById('exportCsv').addEventListener('click', exportCSV);
     if(document.getElementById('map')) initDashboardPage();
-    else { initPeriodSelector(); initChartModalInteractions(); initLatencyChart(); }
+    else { initPeriodSelector(); initChartModalInteractions(); initLatencyChart(); renderBreakdownCharts(); renderTopPages(); }
   });
 
   window.__visiter = { initDashboardPage };

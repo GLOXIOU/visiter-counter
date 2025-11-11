@@ -26,9 +26,45 @@
         <div class="info-value" id="tagName">—</div>
       </div>
       <div class="card info-card">
-        <div class="info-title">Code du tag</div>
+        <div class="info-title">Date de création du tag</div>
         <div class="info-value" id="tagParam">—</div>
       </div>
+    </div>
+
+    <div class="controls-row panel card">
+      <div class="controls-left">
+        <div class="controls">
+          <div class="filter-group">
+            <label for="filterDevice" class="filter-label">Appareil</label>
+            <select id="filterDevice" class="filter-select" aria-label="Filtrer par appareil">
+              <option value="all">Tous</option>
+              <option value="desktop">Bureau</option>
+              <option value="mobile">Mobile</option>
+              <option value="tablet">Tablette</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterReferrer" class="filter-label">Source</label>
+            <select id="filterReferrer" class="filter-select" aria-label="Filtrer par source">
+              <option value="all">Tous</option>
+              <option value="direct">Direct</option>
+              <option value="social">Réseaux</option>
+              <option value="search">Recherche</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filterCountry" class="filter-label">Pays</label>
+            <select id="filterCountry" class="filter-select" aria-label="Filtrer par pays">
+              <option value="all">Tous</option>
+              <option value="FR">France</option>
+              <option value="US">États-Unis</option>
+              <option value="DE">Allemagne</option>
+            </select>
+          </div>
+          <button id="exportCsv" class="btn primary">Exporter CSV</button>
+        </div>
+      </div>
+      <div class="controls-right hint"></div>
     </div>
 
     <div class="map-container">
@@ -64,6 +100,43 @@
       </div>
     </div>
 
+    <section class="panels-grid">
+      <div class="panel card">
+        <div class="panel-header">
+          <h3>Top pages</h3>
+        </div>
+        <div class="table-wrap">
+          <table id="topPagesTable" class="top-pages-table" aria-label="Top pages">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Page</th>
+                <th>Vues</th>
+                <th>Visiteurs uniques</th>
+                <th>Temps moyen</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel card">
+        <div class="panel-header">
+          <h3>Répartition</h3>
+          <div id="breakdownLegend" class="breakdown-legend"></div>
+        </div>
+        <div class="breakdowns">
+          <div class="breakdown-item">
+            <canvas id="deviceChart" width="300" height="200"></canvas>
+          </div>
+          <div class="breakdown-item">
+            <canvas id="browserChart" width="300" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="latency-panel card">
       <div class="latency-header">
         <h2>Latence API (Ping en ms)</h2>
@@ -71,6 +144,23 @@
       </div>
       <canvas id="latencyChart"></canvas>
     </section>
+
+    <section class="live-panel card" aria-live="polite">
+      <div class="panel-header">
+        <h3>Vues en direct</h3>
+      </div>
+      <ul id="liveList" class="live-list"></ul>
+    </section>
+
+    <section class="service-status card">
+      <h3>État des services</h3>
+      <div class="status-legend">
+        <span class="legend-item"><span class="dot green"></span> Opérationnel</span>
+        <span class="legend-item"><span class="dot red"></span> Hors ligne</span>
+      </div>
+      <div id="servicesList" class="services-list"></div>
+    </section>
+
   </main>
 
   <div id="chartModal" class="chart-modal" hidden>
